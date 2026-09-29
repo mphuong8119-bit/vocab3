@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PinkyVocab AI - Học Từ Vựng Tiếng Anh Thông Minh</title>
+    <!-- Google Fonts: Be Vietnam Pro & Nunito (Đảm bảo 100% không lỗi font Tiếng Việt) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pinky: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            300: '#fda4af',
+                            400: '#fb7185',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Nunito', 'Be Vietnam Pro', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Nunito', 'Be Vietnam Pro', sans-serif;
+            background-color: #fff0f5;
+            background-image: radial-gradient(#fbcfe8 1.5px, transparent 1.5px);
+            background-size: 20px 20px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 3D Flip Card Mechanics */
+        .card-perspective {
+            perspective: 1200px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 1.5rem;
+            overflow: hidden;
+        }
+        .card-face-front {
+            z-index: 2;
+            transform: rotateY(0deg);
+        }
+        .card-face-back {
+            transform: rotateY(180deg);
+            z-index: 1;
+        }
+        .card-inner.is-flipped .card-face-front {
+            pointer-events: none;
+        }
+        .card-inner.is-flipped .card-face-back {
+            z-index: 3;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #ffe4e6;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f43f5e;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-800 flex flex-col justify-between antialiased selection:bg-pink-200">
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-2 border-pink-200 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
+            
+            <!-- Logo -->
+            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchTab('flashcards')">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-400 flex items-center justify-center text-white text-xl shadow-lg shadow-pink-300/50 transform active:scale-95 transition">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black bg-gradient-to-r from-pink-500 via-purple-500 to-rose-500 bg-clip-text text-transparent leading-none">PinkyVocab</h1>
+                    <p class="text-[10px] text-pink-400 font-extrabold tracking-wider uppercase mt-0.5">English Fun AI</p>
+                </div>
+            </div>
+
+            <!-- Desktop Navigation Links -->
+            <nav class="hidden md:flex space-x-1.5 bg-pink-50 p-1.5 rounded-full border border-pink-200">
+                <button onclick="switchTab('flashcards')" id="nav-flashcards" class="nav-btn px-4 py-2 rounded-full font-extrabold text-sm transition flex items-center gap-2 text-pink-600 bg-white shadow-sm">
+                    <i class="fa-solid fa-layer-group"></i> Flashcard
+                </button>
+                <button onclick="switchTab('games')" id="nav-games" class="nav-btn px-4 py-2 rounded-full font-extrabold text-sm transition flex items-center gap-2 text-gray-600 hover:text-pink-500">
+                    <i class="fa-solid fa-gamepad"></i> Minigame
+                </button>
+                <button onclick="switchTab('ai-dict')" id="nav-ai-dict" class="nav-btn px-4 py-2 rounded-full font-extrabold text-sm transition flex items-center gap-2 text-gray-600 hover:text-pink-500">
+                    <i class="fa-solid fa-wand-magic-sparkles text-purple-500"></i> AI Từ Điển
+                </button>
+                <button onclick="switchTab('manage')" id="nav-manage" class="nav-btn px-4 py-2 rounded-full font-extrabold text-sm transition flex items-center gap-2 text-gray-600 hover:text-pink-500">
+                    <i class="fa-solid fa-book-bookmark"></i> Kho Từ
+                </button>
+            </nav>
+
+            <!-- Top Action Buttons -->
+            <div class="flex items-center gap-2">
+                <!-- API Key Config Button -->
+                <button onclick="openApiKeyModal()" id="header-api-btn" class="bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300 font-extrabold px-3 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95">
+                    <i class="fa-solid fa-key text-purple-600"></i>
+                    <span class="hidden sm:inline">Cài đặt API Key</span>
+                    <span id="api-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                </button>
+
+                <!-- Add Custom Word Button -->
+                <button onclick="openAddWordModal()" class="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-extrabold px-3.5 py-2 rounded-full text-xs sm:text-sm shadow-md shadow-pink-300/50 flex items-center gap-1.5 transform active:scale-95 transition">
+                    <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Thêm từ</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-grow w-full">
+
+        <!-- SECTION 1: FLASHCARDS -->
+        <section id="section-flashcards" class="tab-content transition-all duration-300">
+            <!-- Header Filter Bar -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-4 gap-3">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-black text-gray-800 flex items-center gap-2">
+                        <span class="w-2.5 h-6 bg-pink-500 rounded-full inline-block"></span> Flashcards Học Từ Vựng
+                    </h2>
+                    <p class="text-gray-500 text-xs mt-0.5">Chạm vào thẻ để xem nghĩa Tiếng Việt & ví dụ</p>
+                </div>
+
+                <div class="flex items-center justify-between sm:justify-end gap-2">
+                    <select id="category-filter" onchange="filterCategory()" class="bg-white border-2 border-pink-200 text-pink-600 text-xs font-bold rounded-2xl px-3 py-2 focus:outline-none focus:border-pink-400 shadow-sm">
+                        <option value="all">Tất cả chủ đề</option>
+                    </select>
+
+                    <div class="bg-white border-2 border-pink-200 px-3 py-2 rounded-2xl flex items-center gap-1.5 text-xs font-bold text-pink-600 shadow-sm">
+                        <i class="fa-solid fa-circle-check text-green-500"></i>
+                        <span>Đã thuộc: <span id="mastered-count" class="text-pink-600">0</span>/<span id="total-count">0</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flashcard Container -->
+            <div class="max-w-md mx-auto my-2">
+                <div class="card-perspective w-full h-[380px] sm:h-[420px] cursor-pointer" onclick="toggleFlipCard()">
+                    <div id="flashcard-inner" class="card-inner border-4 border-pink-300 rounded-3xl shadow-xl bg-white">
+                        
+                        <!-- FRONT FACE -->
+                        <div class="card-face card-face-front p-5 flex flex-col justify-between items-center text-center bg-gradient-to-b from-white via-pink-50/50 to-pink-100/40">
+                            <div class="w-full flex justify-between items-center">
+                                <span id="card-topic" class="bg-pink-100 text-pink-600 text-[10px] font-extrabold px-3 py-1 rounded-full border border-pink-200 uppercase tracking-wider">
+                                    Topic
+                                </span>
+                                <button onclick="event.stopPropagation(); toggleMasteredCurrentWord();" id="master-btn" class="text-gray-300 hover:text-green-500 text-2xl transition transform hover:scale-125" title="Đánh dấu đã thuộc">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </button>
+                            </div>
+
+                            <div class="my-auto w-full px-2">
+                                <span id="card-type" class="inline-block bg-purple-100 text-purple-700 font-black text-[10px] px-3 py-0.5 rounded-full mb-2 uppercase tracking-wider">
+                                    noun
+                                </span>
+                                <h3 id="card-word" class="text-3xl sm:text-4xl font-black text-gray-800 tracking-wide mb-2 break-words">
+                                    Vocabulary
+                                </h3>
+                                <div class="flex items-center justify-center gap-2 text-pink-500 font-bold text-lg">
+                                    <span id="card-ipa">/vəˈkæbjələri/</span>
+                                    <button onclick="event.stopPropagation(); speakText(document.getElementById('card-word').innerText);" class="w-9 h-9 rounded-full bg-pink-100 hover:bg-pink-200 text-pink-600 flex items-center justify-center text-base transition active:scale-90 shadow-sm">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="text-[11px] font-bold text-pink-400 animate-pulse flex items-center gap-1.5">
+                                <i class="fa-solid fa-rotate"></i> Chạm thẻ để lật mặt sau
+                            </div>
+                        </div>
+
+                        <!-- BACK FACE -->
+                        <div class="card-face card-face-back p-5 flex flex-col justify-between rounded-3xl bg-gradient-to-b from-purple-50 via-white to-pink-50 border-2 border-purple-200">
+                            <div class="flex justify-between items-center border-b border-purple-100 pb-2">
+                                <div class="flex items-center gap-2">
+                                    <span id="card-back-word" class="font-black text-pink-600 text-lg">Word</span>
+                                    <span id="card-back-ipa" class="text-xs font-bold text-purple-400">/ipa/</span>
+                                </div>
+                                <button onclick="event.stopPropagation(); speakText(document.getElementById('card-back-word').innerText);" class="w-8 h-8 rounded-full bg-pink-100 hover:bg-pink-200 text-pink-600 flex items-center justify-center text-xs transition active:scale-90">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                </button>
+                            </div>
+
+                            <div class="my-auto space-y-2.5 text-left">
+                                <!-- Vietnamese Meaning (Rất rõ ràng) -->
+                                <div class="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-3.5 rounded-2xl shadow-md">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-pink-100">Nghĩa Tiếng Việt</p>
+                                    <p id="card-meaning" class="text-xl sm:text-2xl font-black mt-0.5 leading-snug">Từ vựng</p>
+                                </div>
+
+                                <!-- Definition in English -->
+                                <div id="card-def-box" class="bg-purple-50 p-2.5 rounded-2xl border border-purple-100">
+                                    <p class="text-[9px] font-extrabold uppercase tracking-wider text-purple-500">Định nghĩa Tiếng Anh</p>
+                                    <p id="card-def" class="text-xs font-semibold text-gray-700 mt-0.5 line-clamp-2">English definition goes here.</p>
+                                </div>
+
+                                <!-- Example Sentence -->
+                                <div class="bg-white p-2.5 rounded-2xl border border-pink-200 shadow-sm">
+                                    <p class="text-[9px] font-extrabold uppercase tracking-wider text-pink-500 flex items-center gap-1">
+                                        <i class="fa-solid fa-quote-left"></i> Ví dụ minh họa:
+                                    </p>
+                                    <p id="card-example" class="text-xs font-bold text-gray-800 italic mt-0.5">"Learning vocabulary is fun!"</p>
+                                    <p id="card-example-vi" class="text-[11px] font-medium text-gray-500 mt-0.5">"Học từ vựng rất thú vị!"</p>
+                                </div>
+                            </div>
+
+                            <div class="text-center text-[11px] font-bold text-purple-400 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-rotate"></i> Chạm để xoay lại mặt trước
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="flex items-center justify-between mt-4 gap-2">
+                    <button onclick="prevCard()" class="flex-1 bg-white hover:bg-pink-50 text-pink-600 border-2 border-pink-200 font-extrabold py-2.5 px-3 rounded-2xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs sm:text-sm active:scale-95">
+                        <i class="fa-solid fa-arrow-left"></i> Trước
+                    </button>
+                    <span id="card-index-indicator" class="font-black text-pink-500 px-3 py-2 bg-white rounded-2xl border-2 border-pink-200 text-xs shadow-sm">
+                        1 / 1
+                    </span>
+                    <button onclick="nextCard()" class="flex-1 bg-pink-500 hover:bg-pink-600 text-white font-extrabold py-2.5 px-3 rounded-2xl shadow-md shadow-pink-300/50 transition flex items-center justify-center gap-1.5 text-xs sm:text-sm active:scale-95">
+                        Tiếp <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: MINIGAMES -->
+        <section id="section-games" class="tab-content hidden transition-all duration-300">
+            <div class="mb-4">
+                <h2 class="text-xl sm:text-2xl font-black text-gray-800 flex items-center gap-2">
+                    <span class="w-2.5 h-6 bg-purple-500 rounded-full inline-block"></span> Minigames Luyện Từ Vựng
+                </h2>
+                <p class="text-gray-500 text-xs mt-0.5">Luyện tập ghi nhớ nhanh qua 3 trò chơi thú vị</p>
+            </div>
+
+            <!-- Game Selection Grid -->
+            <div id="game-menu" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Game 1 -->
+                <div class="bg-gradient-to-br from-pink-500 to-rose-400 text-white p-5 rounded-3xl shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-xl mb-3">
+                            <i class="fa-solid fa-link"></i>
+                        </div>
+                        <h3 class="text-lg font-black mb-1">Nối Từ Nhớ Nghĩa</h3>
+                        <p class="text-pink-100 text-xs mb-4">Nối từ Tiếng Anh với nghĩa Tiếng Việt tương ứng.</p>
+                    </div>
+                    <button onclick="startGame(1)" class="w-full bg-white text-pink-600 font-extrabold py-2.5 rounded-2xl shadow-md hover:bg-pink-50 transition active:scale-95 text-xs">
+                        Chơi Ngay <i class="fa-solid fa-play ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- Game 2 -->
+                <div class="bg-gradient-to-br from-purple-500 to-indigo-500 text-white p-5 rounded-3xl shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-xl mb-3">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <h3 class="text-lg font-black mb-1">Trắc Nghiệm Phản Xạ</h3>
+                        <p class="text-purple-100 text-xs mb-4">Chọn đáp án đúng dưới thời gian đếm ngược.</p>
+                    </div>
+                    <button onclick="startGame(2)" class="w-full bg-white text-purple-600 font-extrabold py-2.5 rounded-2xl shadow-md hover:bg-purple-50 transition active:scale-95 text-xs">
+                        Chơi Ngay <i class="fa-solid fa-play ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- Game 3 -->
+                <div class="bg-gradient-to-br from-amber-400 to-orange-500 text-white p-5 rounded-3xl shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-xl mb-3">
+                            <i class="fa-solid fa-puzzle-piece"></i>
+                        </div>
+                        <h3 class="text-lg font-black mb-1">Xếp Chữ Đảo</h3>
+                        <p class="text-amber-100 text-xs mb-4">Sắp xếp các ký tự xáo trộn thành từ chuẩn.</p>
+                    </div>
+                    <button onclick="startGame(3)" class="w-full bg-white text-orange-600 font-extrabold py-2.5 rounded-2xl shadow-md hover:bg-orange-50 transition active:scale-95 text-xs">
+                        Chơi Ngay <i class="fa-solid fa-play ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game Arena Container -->
+            <div id="game-container" class="hidden bg-white rounded-3xl p-4 sm:p-6 border-2 border-pink-200 shadow-xl max-w-2xl mx-auto relative">
+                <button onclick="exitGame()" class="absolute top-3 right-3 bg-gray-100 hover:bg-gray-200 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+
+                <!-- Game Header Bar -->
+                <div class="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
+                    <div class="flex items-center gap-2">
+                        <span id="game-title-badge" class="bg-pink-100 text-pink-600 font-extrabold px-3 py-1 rounded-full text-xs">Game</span>
+                        <span id="game-score" class="font-black text-gray-800 text-base">Điểm: <span class="text-pink-600">0</span></span>
+                    </div>
+                    <div id="game-timer-wrapper" class="flex items-center gap-1.5 text-amber-600 font-black text-base bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
+                        <i class="fa-regular fa-clock"></i> <span id="game-timer">30</span>s
+                    </div>
+                </div>
+
+                <!-- GAME 1 UI -->
+                <div id="game1-ui" class="hidden">
+                    <p class="text-center text-xs font-bold text-gray-500 mb-4">Nối 1 từ Tiếng Anh với 1 nghĩa Tiếng Việt tương ứng!</p>
+                    <div class="grid grid-cols-2 gap-2.5" id="matching-grid"></div>
+                </div>
+
+                <!-- GAME 2 UI -->
+                <div id="game2-ui" class="hidden text-center">
+                    <h3 id="quiz-question-word" class="text-2xl sm:text-3xl font-black text-gray-800 my-3">Vocabulary</h3>
+                    <p class="text-xs font-bold text-gray-400 mb-4 uppercase">Chọn nghĩa đúng của từ trên:</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="quiz-options"></div>
+                </div>
+
+                <!-- GAME 3 UI -->
+                <div id="game3-ui" class="hidden text-center">
+                    <p id="scramble-hint" class="text-base font-extrabold text-gray-700 my-2">Gợi ý: Từ vựng</p>
+                    <div id="scramble-letters" class="flex flex-wrap justify-center gap-1.5 my-4"></div>
+                    <div class="flex gap-2 max-w-xs mx-auto">
+                        <input type="text" id="scramble-input" placeholder="Nhập từ..." class="flex-1 border-2 border-orange-200 rounded-2xl px-3 py-2 font-bold text-center focus:outline-none focus:border-orange-400 uppercase tracking-widest text-base">
+                        <button onclick="checkScrambleAnswer()" class="bg-orange-500 text-white font-extrabold px-4 py-2 rounded-2xl hover:bg-orange-600 transition text-xs">Gửi</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: AI DICTIONARY -->
+        <section id="section-ai-dict" class="tab-content hidden transition-all duration-300">
+            <div class="mb-4">
+                <h2 class="text-xl sm:text-2xl font-black text-gray-800 flex items-center gap-2">
+                    <span class="w-2.5 h-6 bg-purple-500 rounded-full inline-block"></span> AI Từ Điển Thông Minh
+                </h2>
+                <p class="text-gray-500 text-xs mt-0.5">Tra cứu mọi từ/cụm từ Tiếng Anh với Google Gemini AI</p>
+            </div>
+
+            <!-- API Key Banner Alert if not set -->
+            <div id="ai-key-warning" class="bg-amber-50 border-2 border-amber-200 p-3.5 rounded-2xl mb-4 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 text-xs font-extrabold text-amber-800">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500 text-base"></i>
+                    <span>Chưa lưu Gemini API Key. Vui lòng cài đặt Key để dùng AI!</span>
+                </div>
+                <button onclick="openApiKeyModal()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl shrink-0 transition">
+                    🔑 Cài Key
+                </button>
+            </div>
+
+            <!-- Search Box -->
+            <div class="bg-white p-3.5 sm:p-5 rounded-3xl border-2 border-purple-200 shadow-lg max-w-2xl mx-auto mb-6">
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400"></i>
+                        <input type="text" id="ai-search-input" placeholder="Nhập từ Tiếng Anh (vd: Serendipity)..." class="w-full pl-10 pr-3 py-3 bg-purple-50/50 border-2 border-purple-100 rounded-2xl font-bold text-gray-800 placeholder-purple-300 text-sm focus:outline-none focus:border-purple-400 transition" onkeyup="if(event.key==='Enter') lookupAIDictionary()">
+                    </div>
+                    <button onclick="lookupAIDictionary()" class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-black px-5 py-3 rounded-2xl shadow-md transition flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-95">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Tra từ AI
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Result Loading State -->
+            <div id="ai-loading" class="hidden text-center py-10">
+                <div class="inline-block w-10 h-10 border-4 border-purple-300 border-t-purple-600 rounded-full animate-spin mb-3"></div>
+                <p class="font-extrabold text-purple-600 text-sm animate-pulse">Gemini AI đang phân tích từ vựng...</p>
+            </div>
+
+            <!-- AI Result Card -->
+            <div id="ai-result-card" class="hidden max-w-2xl mx-auto bg-white rounded-3xl p-5 border-2 border-purple-200 shadow-xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-purple-100 pb-3 mb-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 id="ai-res-word" class="text-2xl font-black text-purple-900">Word</h3>
+                            <span id="ai-res-type" class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full">noun</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-purple-500 font-extrabold text-xs mt-1">
+                            <span id="ai-res-ipa">/ipa/</span>
+                            <button onclick="speakText(document.getElementById('ai-res-word').innerText)" class="w-7 h-7 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="addAIWordToFlashcards()" class="bg-pink-500 hover:bg-pink-600 text-white font-extrabold px-3 py-2 rounded-2xl shadow-md text-xs flex items-center gap-1.5 transition active:scale-95">
+                        <i class="fa-solid fa-bookmark"></i> Thêm vào Flashcards
+                    </button>
+                </div>
+
+                <div class="space-y-4 text-left">
+                    <div>
+                        <h4 class="text-[10px] font-extrabold text-purple-400 uppercase tracking-wider mb-0.5">Nghĩa Tiếng Việt</h4>
+                        <p id="ai-res-meaning" class="text-lg font-black text-gray-800">Nghĩa Tiếng Việt</p>
+                    </div>
+
+                    <div class="bg-purple-50 p-3 rounded-2xl border border-purple-100">
+                        <h4 class="text-[10px] font-extrabold text-purple-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                            <i class="fa-solid fa-lightbulb"></i> Định nghĩa Tiếng Anh
+                        </h4>
+                        <p id="ai-res-def" class="text-xs font-semibold text-gray-700">English definition</p>
+                    </div>
+
+                    <div class="bg-pink-50 p-3 rounded-2xl border border-pink-100">
+                        <h4 class="text-[10px] font-extrabold text-pink-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                            <i class="fa-solid fa-quote-left"></i> Ví dụ thực tế
+                        </h4>
+                        <p id="ai-res-example" class="text-xs font-bold text-gray-800 italic">"Example sentence"</p>
+                        <p id="ai-res-example-vi" class="text-[11px] font-medium text-gray-600 mt-0.5">"Dịch câu ví dụ"</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-amber-50 p-3 rounded-2xl border border-amber-100">
+                            <h4 class="text-[10px] font-extrabold text-amber-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                <i class="fa-solid fa-brain"></i> Mẹo nhớ từ nhanh
+                            </h4>
+                            <p id="ai-res-mnemonics" class="text-xs font-medium text-gray-700">Mẹo nhớ hay</p>
+                        </div>
+
+                        <div class="bg-blue-50 p-3 rounded-2xl border border-blue-100">
+                            <h4 class="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                <i class="fa-solid fa-layer-group"></i> Từ liên quan / Collocations
+                            </h4>
+                            <p id="ai-res-collocations" class="text-xs font-medium text-gray-700">Cụm từ liên quan</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: VOCABULARY MANAGEMENT -->
+        <section id="section-manage" class="tab-content hidden transition-all duration-300">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-black text-gray-800 flex items-center gap-2">
+                        <span class="w-2.5 h-6 bg-emerald-500 rounded-full inline-block"></span> Quản Lý Kho Từ Vựng
+                    </h2>
+                    <p class="text-gray-500 text-xs mt-0.5">Danh sách các từ vựng trong kho Flashcard</p>
+                </div>
+                <button onclick="resetVocabularyToDefault()" class="text-xs font-extrabold text-gray-400 hover:text-rose-500 underline">
+                    Khôi phục từ vựng gốc
+                </button>
+            </div>
+
+            <!-- Table Card Container -->
+            <div class="bg-white rounded-3xl border-2 border-pink-100 shadow-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-pink-50 text-pink-600 text-[11px] font-extrabold uppercase border-b border-pink-100">
+                                <th class="p-3">Từ vựng</th>
+                                <th class="p-3">Loại từ</th>
+                                <th class="p-3">Nghĩa Tiếng Việt</th>
+                                <th class="p-3">Chủ đề</th>
+                                <th class="p-3 text-center">Trạng thái</th>
+                                <th class="p-3 text-center">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vocab-table-body" class="divide-y divide-pink-50 text-xs font-semibold text-gray-700">
+                            <!-- Dynamic Table Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL 1: GEMINI API KEY CONFIGURATION -->
+    <div id="api-key-modal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-2 border-purple-200 shadow-2xl relative">
+            <button onclick="closeApiKeyModal()" class="absolute top-3 right-3 bg-gray-100 hover:bg-gray-200 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <h3 class="text-lg font-black text-gray-800">Cài đặt API Key</h3>
+            </div>
+            
+            <p class="text-gray-500 text-xs mb-4">Nhập Gemini API Key để dùng Từ điển AI khi chạy file HTML trên máy:</p>
+
+            <div class="space-y-3">
+                <input type="password" id="input-api-key" placeholder="Dán Gemini API Key (AIzaSy...)" class="w-full px-3 py-2.5 bg-purple-50/60 border border-purple-200 rounded-xl font-mono text-xs focus:outline-none focus:border-purple-500">
+
+                <div class="flex gap-2">
+                    <button onclick="saveApiKey()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-extrabold py-2.5 rounded-xl text-xs shadow-md transition active:scale-95">
+                        💾 Lưu Key
+                    </button>
+                    <button onclick="clearApiKey()" class="bg-rose-100 hover:bg-rose-200 text-rose-600 font-extrabold px-3 py-2.5 rounded-xl text-xs transition">
+                        Xóa Key
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-gray-100 text-[11px] text-gray-500">
+                <p class="font-bold text-purple-700 mb-1"><i class="fa-solid fa-circle-info"></i> Cách lấy Key miễn phí:</p>
+                <p>1. Mở web <a href="https://aistudio.google.com/" target="_blank" class="text-pink-600 underline font-bold">Google AI Studio</a></p>
+                <p>2. Chọn <b>Create API Key</b> -> Copy mã paste vào đây.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ADD VOCABULARY -->
+    <div id="add-word-modal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 border-2 border-pink-200 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeAddWordModal()" class="absolute top-3 right-3 bg-gray-100 hover:bg-gray-200 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+
+            <h3 class="text-lg font-black text-gray-800 mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-plus-circle text-pink-500"></i> Thêm Từ Vựng Mới
+            </h3>
+            <p class="text-gray-400 text-xs mb-4">Thêm từ mới vào bộ Flashcards của bạn</p>
+
+            <form id="add-word-form" onsubmit="handleSaveWord(event)" class="space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-extrabold text-gray-600 mb-1">Từ Tiếng Anh *</label>
+                        <input type="text" id="input-word" required placeholder="vd: Delightful" class="w-full px-3 py-2 bg-pink-50/50 border border-pink-200 rounded-xl font-bold text-xs focus:outline-none focus:border-pink-400">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-extrabold text-gray-600 mb-1">Phiên âm IPA</label>
+                        <input type="text" id="input-ipa" placeholder="vd: /dɪˈlaɪt.fəl/" class="w-full px-3 py-2 bg-pink-50/50 border border-pink-200 rounded-xl font-bold text-xs focus:outline-none focus:border-pink-400">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-extrabold text-gray-600 mb-1">Loại từ</label>
+                        <select id="input-type" class="w-full px-3 py-2 bg-pink-50/50 border border-pink-200 rounded-xl font-bold text-xs focus:outline-none focus:border-pink-400">
+                            <option value="noun">Noun (danh từ)</option>
+                            <option value="verb">Verb (động từ)</option>
+                            <option value="adjective">Adjective (tính từ)</option>
+                            <option value="adverb">Adverb (trạng từ)</option>
+                            <option value="phrase">Phrase (cụm từ)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-extrabold text-gray-600 mb-1">Chủ đề</label>
+                        <input type="text" id="input-topic" placeholder="vd: Emotion" class="w-full px-3 py-2 bg-pink-50/50 border border-pink-200 rounded-xl font-bold text-xs focus:outline-none focus:border-pink-400">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-extrabold text-gray-600 mb-1">Nghĩa Tiếng Việt *</label>
+                    <input type="text" id="input-meaning" required placeholder="vd: Tươi vui, thú vị" class="w-full px-3 py-2 bg-pink-50/50 border border-pink-200 rounded-xl font-bold text-xs focus:outline-none focus:border-pink-400">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-extrabold text-gray-600 mb-1">Định nghĩa Tiếng Anh</label>
+                    <input type="text" id="input-definition" placeholder="vd: Very pleasant or charming" class="w-full px-3 py-2 bg-pink-50/50 border border-pink-200 rounded-xl font-bold text-xs focus:outline-none focus:border-pink-400">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-extrabold text-gray-600 mb-1">Ví dụ Tiếng Anh</label>
+                    <input type="text" id="input-example" placeholder="vd: We had a delightful evening." class="w-full px-3 py-2 bg-pink-50/50 border border-pink-200 rounded-xl font-bold text-xs focus:outline-none focus:border-pink-400">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-extrabold text-gray-600 mb-1">Dịch nghĩa ví dụ</label>
+                    <input type="text" id="input-example-vi" placeholder="vd: Buổi tối thật thú vị." class="w-full px-3 py-2 bg-pink-50/50 border border-pink-200 rounded-xl font-bold text-xs focus:outline-none focus:border-pink-400">
+                </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button type="button" onclick="closeAddWordModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-2xl text-xs transition">Hủy</button>
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-extrabold py-2.5 rounded-2xl text-xs shadow-md hover:from-pink-600 hover:to-rose-600 transition">Lưu Từ Vựng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-16 right-4 left-4 sm:left-auto sm:w-80 bg-gray-900 text-white font-bold text-xs px-4 py-3 rounded-2xl shadow-2xl z-50 transform -translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-green-400 text-sm"></i>
+        <span id="toast-message">Thông báo!</span>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar (Dành cho điện thoại di động) -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-pink-200 px-3 py-2 z-40 flex justify-around items-center">
+        <button onclick="switchTab('flashcards')" id="m-nav-flashcards" class="flex flex-col items-center gap-0.5 text-pink-600">
+            <i class="fa-solid fa-layer-group text-base"></i>
+            <span class="text-[10px] font-black">Flashcard</span>
+        </button>
+        <button onclick="switchTab('games')" id="m-nav-games" class="flex flex-col items-center gap-0.5 text-gray-400">
+            <i class="fa-solid fa-gamepad text-base"></i>
+            <span class="text-[10px] font-black">Game</span>
+        </button>
+        <button onclick="switchTab('ai-dict')" id="m-nav-ai-dict" class="flex flex-col items-center gap-0.5 text-gray-400">
+            <i class="fa-solid fa-wand-magic-sparkles text-base text-purple-500"></i>
+            <span class="text-[10px] font-black">AI Dict</span>
+        </button>
+        <button onclick="switchTab('manage')" id="m-nav-manage" class="flex flex-col items-center gap-0.5 text-gray-400">
+            <i class="fa-solid fa-book-bookmark text-base"></i>
+            <span class="text-[10px] font-black">Kho Từ</span>
+        </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white/80 border-t border-pink-100 py-3 text-center text-[11px] font-semibold text-pink-400 mb-12 md:mb-0">
+        PinkyVocab AI &copy; 2026 - Học Từ Vựng Tiếng Anh Thông Minh
+    </footer>
+
+    <script>
+        // Sample Default Vocabulary
+        const DEFAULT_VOCABULARY = [
+            {
+                id: '1',
+                word: 'Serendipity',
+                ipa: '/ˌser.ənˈdɪp.ə.ti/',
+                type: 'noun',
+                meaning: 'Sự may mắn bất ngờ',
+                definition: 'Finding valuable or agreeable things by chance.',
+                example: 'Finding this rare book was pure serendipity.',
+                exampleVi: 'Tìm thấy cuốn sách hiếm này hoàn toàn là sự may mắn bất ngờ.',
+                topic: 'Emotion',
+                mastered: false
+            },
+            {
+                id: '2',
+                word: 'Resilience',
+                ipa: '/rɪˈzɪl.jəns/',
+                type: 'noun',
+                meaning: 'Sự kiên cường, phục hồi nhanh',
+                definition: 'The capacity to recover quickly from difficulties.',
+                example: 'Her resilience in facing challenges impressed everyone.',
+                exampleVi: 'Sự kiên cường khi đối mặt với thử thách làm mọi người ấn tượng.',
+                topic: 'Personality',
+                mastered: false
+            },
+            {
+                id: '3',
+                word: 'Ebullient',
+                ipa: '/ɪˈbʊl.i.ənt/',
+                type: 'adjective',
+                meaning: 'Tràn đầy năng lượng, sôi nổi',
+                definition: 'Cheerful and full of energy.',
+                example: 'She sounded in ebullient spirits on the phone.',
+                exampleVi: 'Cô ấy tràn đầy năng lượng khi nói chuyện điện thoại.',
+                topic: 'Emotion',
+                mastered: false
+            },
+            {
+                id: '4',
+                word: 'Meticulous',
+                ipa: '/mɪˈtɪk.jə.ləs/',
+                type: 'adjective',
+                meaning: 'Tỉ mỉ, vô cùng cẩn thận',
+                definition: 'Showing great attention to detail; very careful.',
+                example: 'He is meticulous about keeping his work organized.',
+                exampleVi: 'Anh ấy rất tỉ mỉ giữ công việc ngăn nắp.',
+                topic: 'Personality',
+                mastered: false
+            }
+        ];
+
+        // Global States
+        let vocabularyList = [];
+        let filteredList = [];
+        let currentIndex = 0;
+        let isFlipped = false;
+        let currentSearchedAIWord = null;
+
+        // Minigame States
+        let currentGameTimer = null;
+        let gameScore = 0;
+        let gameTimeLeft = 30;
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            loadVocabulary();
+            checkApiKeyStatus();
+        });
+
+        // TTS Pronunciation
+        function speakText(text) {
+            if (!text) return;
+            if (!('speechSynthesis' in window)) {
+                showToast('Trình duyệt không hỗ trợ đọc âm thanh!', 'fa-triangle-exclamation');
+                return;
+            }
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // API Key Storage Logic
+        function checkApiKeyStatus() {
+            const savedKey = localStorage.getItem('pinky_gemini_api_key');
+            const dot = document.getElementById('api-status-dot');
+            const warningBanner = document.getElementById('ai-key-warning');
+
+            if (savedKey) {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm";
+                if (warningBanner) warningBanner.classList.add('hidden');
+            } else {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+                if (warningBanner) warningBanner.classList.remove('hidden');
+            }
+        }
+
+        function openApiKeyModal() {
+            const savedKey = localStorage.getItem('pinky_gemini_api_key') || '';
+            document.getElementById('input-api-key').value = savedKey;
+            document.getElementById('api-key-modal').classList.remove('hidden');
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('api-key-modal').classList.add('hidden');
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('input-api-key').value.trim();
+            if (key) {
+                localStorage.setItem('pinky_gemini_api_key', key);
+                showToast('Đã lưu API Key thành công!', 'fa-circle-check');
+            } else {
+                localStorage.removeItem('pinky_gemini_api_key');
+                showToast('Đã xóa API Key!', 'fa-circle-info');
+            }
+            checkApiKeyStatus();
+            closeApiKeyModal();
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem('pinky_gemini_api_key');
+            document.getElementById('input-api-key').value = '';
+            checkApiKeyStatus();
+            showToast('Đã xóa API Key!', 'fa-circle-info');
+            closeApiKeyModal();
+        }
+
+        // Vocabulary Storage Logic
+        function loadVocabulary() {
+            const stored = localStorage.getItem('pinky_vocab_data');
+            if (stored) {
+                try {
+                    vocabularyList = JSON.parse(stored);
+                } catch (e) {
+                    vocabularyList = [...DEFAULT_VOCABULARY];
+                }
+            } else {
+                vocabularyList = [...DEFAULT_VOCABULARY];
+                saveVocabularyToStorage();
+            }
+
+            populateCategoryFilter();
+            filterCategory();
+            renderVocabTable();
+        }
+
+        function saveVocabularyToStorage() {
+            localStorage.setItem('pinky_vocab_data', JSON.stringify(vocabularyList));
+        }
+
+        function resetVocabularyToDefault() {
+            vocabularyList = [...DEFAULT_VOCABULARY];
+            saveVocabularyToStorage();
+            populateCategoryFilter();
+            filterCategory();
+            renderVocabTable();
+            showToast('Đã khôi phục từ vựng mặc định!', 'fa-circle-check');
+        }
+
+        function populateCategoryFilter() {
+            const select = document.getElementById('category-filter');
+            const topics = [...new Set(vocabularyList.map(item => item.topic || 'Chung'))];
+            
+            select.innerHTML = '<option value="all">Tất cả chủ đề</option>';
+            topics.forEach(topic => {
+                const opt = document.createElement('option');
+                opt.value = topic;
+                opt.textContent = topic;
+                select.appendChild(opt);
+            });
+        }
+
+        function filterCategory() {
+            const selectedTopic = document.getElementById('category-filter').value;
+            if (selectedTopic === 'all') {
+                filteredList = [...vocabularyList];
+            } else {
+                filteredList = vocabularyList.filter(item => item.topic === selectedTopic);
+            }
+
+            currentIndex = 0;
+            updateFlashcardUI();
+            updateMasteredCount();
+        }
+
+        // Update Flashcard Rendering
+        function updateFlashcardUI() {
+            const cardInner = document.getElementById('flashcard-inner');
+            cardInner.classList.remove('is-flipped');
+            isFlipped = false;
+
+            if (filteredList.length === 0) {
+                document.getElementById('card-word').innerText = "Chưa có từ";
+                document.getElementById('card-back-word').innerText = "Chưa có từ";
+                document.getElementById('card-meaning').innerText = "Vui lòng thêm từ vựng mới!";
+                document.getElementById('card-index-indicator').innerText = "0 / 0";
+                return;
+            }
+
+            const item = filteredList[currentIndex];
+
+            // Front Face
+            document.getElementById('card-word').innerText = item.word;
+            document.getElementById('card-ipa').innerText = item.ipa || '';
+            document.getElementById('card-type').innerText = item.type || 'noun';
+            document.getElementById('card-topic').innerText = item.topic || 'Chung';
+
+            // Back Face (Nghĩa Tiếng Việt chuẩn 100%)
+            document.getElementById('card-back-word').innerText = item.word;
+            document.getElementById('card-back-ipa').innerText = item.ipa || '';
+            document.getElementById('card-meaning').innerText = item.meaning || 'Chưa có nghĩa';
+
+            const defBox = document.getElementById('card-def-box');
+            if (item.definition) {
+                document.getElementById('card-def').innerText = item.definition;
+                defBox.classList.remove('hidden');
+            } else {
+                defBox.classList.add('hidden');
+            }
+
+            document.getElementById('card-example').innerText = item.example ? `"${item.example}"` : 'Chưa có ví dụ';
+            document.getElementById('card-example-vi').innerText = item.exampleVi ? `"${item.exampleVi}"` : '';
+
+            // Indicator
+            document.getElementById('card-index-indicator').innerText = `${currentIndex + 1} / ${filteredList.length}`;
+
+            // Master Button Style
+            const masterBtn = document.getElementById('master-btn');
+            if (item.mastered) {
+                masterBtn.className = "text-green-500 hover:text-green-600 text-2xl transition transform hover:scale-125";
+            } else {
+                masterBtn.className = "text-gray-300 hover:text-green-500 text-2xl transition transform hover:scale-125";
+            }
+        }
+
+        function toggleFlipCard() {
+            if (filteredList.length === 0) return;
+            const cardInner = document.getElementById('flashcard-inner');
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                cardInner.classList.add('is-flipped');
+            } else {
+                cardInner.classList.remove('is-flipped');
+            }
+        }
+
+        function nextCard() {
+            if (filteredList.length === 0) return;
+            currentIndex = (currentIndex + 1) % filteredList.length;
+            updateFlashcardUI();
+        }
+
+        function prevCard() {
+            if (filteredList.length === 0) return;
+            currentIndex = (currentIndex - 1 + filteredList.length) % filteredList.length;
+            updateFlashcardUI();
+        }
+
+        function toggleMasteredCurrentWord() {
+            if (filteredList.length === 0) return;
+            const currentItem = filteredList[currentIndex];
+            currentItem.mastered = !currentItem.mastered;
+
+            const mainItem = vocabularyList.find(i => i.id === currentItem.id);
+            if (mainItem) mainItem.mastered = currentItem.mastered;
+
+            saveVocabularyToStorage();
+            updateFlashcardUI();
+            updateMasteredCount();
+            renderVocabTable();
+
+            if (currentItem.mastered) {
+                showToast(`Đã thuộc từ "${currentItem.word}"!`, 'fa-circle-check');
+            }
+        }
+
+        function updateMasteredCount() {
+            const masteredCount = vocabularyList.filter(i => i.mastered).length;
+            document.getElementById('mastered-count').innerText = masteredCount;
+            document.getElementById('total-count').innerText = vocabularyList.length;
+        }
+
+        // Navigation Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = "nav-btn px-4 py-2 rounded-full font-extrabold text-sm transition flex items-center gap-2 text-gray-600 hover:text-pink-500";
+            });
+            const activeNav = document.getElementById(`nav-${tabName}`);
+            if (activeNav) {
+                activeNav.className = "nav-btn px-4 py-2 rounded-full font-extrabold text-sm transition flex items-center gap-2 text-pink-600 bg-white shadow-sm";
+            }
+
+            const mNavs = ['flashcards', 'games', 'ai-dict', 'manage'];
+            mNavs.forEach(item => {
+                const elem = document.getElementById(`m-nav-${item}`);
+                if (elem) {
+                    elem.className = (item === tabName) ? "flex flex-col items-center gap-0.5 text-pink-600" : "flex flex-col items-center gap-0.5 text-gray-400";
+                }
+            });
+        }
+
+        // Add Word Modal
+        function openAddWordModal() {
+            document.getElementById('add-word-modal').classList.remove('hidden');
+        }
+
+        function closeAddWordModal() {
+            document.getElementById('add-word-modal').classList.add('hidden');
+            document.getElementById('add-word-form').reset();
+        }
+
+        function handleSaveWord(event) {
+            event.preventDefault();
+            const word = document.getElementById('input-word').value.trim();
+            const ipa = document.getElementById('input-ipa').value.trim();
+            const type = document.getElementById('input-type').value;
+            const topic = document.getElementById('input-topic').value.trim() || 'Chung';
+            const meaning = document.getElementById('input-meaning').value.trim();
+            const definition = document.getElementById('input-definition').value.trim();
+            const example = document.getElementById('input-example').value.trim();
+            const exampleVi = document.getElementById('input-example-vi').value.trim();
+
+            if (!word || !meaning) return;
+
+            const newVocab = {
+                id: Date.now().toString(),
+                word,
+                ipa,
+                type,
+                topic,
+                meaning,
+                definition,
+                example,
+                exampleVi,
+                mastered: false
+            };
+
+            vocabularyList.unshift(newVocab);
+            saveVocabularyToStorage();
+            populateCategoryFilter();
+            filterCategory();
+            renderVocabTable();
+            closeAddWordModal();
+
+            showToast(`Đã thêm từ "${word}"!`, 'fa-circle-check');
+        }
+
+        // Gemini AI Dictionary Logic
+        async function lookupAIDictionary() {
+            const query = document.getElementById('ai-search-input').value.trim();
+            if (!query) {
+                showToast('Vui lòng nhập từ cần tra!', 'fa-triangle-exclamation');
+                return;
+            }
+
+            const savedKey = localStorage.getItem('pinky_gemini_api_key');
+            const apiKey = savedKey || ""; 
+
+            const loadingElem = document.getElementById('ai-loading');
+            const resultCard = document.getElementById('ai-result-card');
+
+            loadingElem.classList.remove('hidden');
+            resultCard.classList.add('hidden');
+
+            const systemPrompt = `Bạn là từ điển Tiếng Anh cho người Việt. Trả về JSON chuẩn duy nhất không có bọc markdown:
+{
+  "word": "từ tiếng anh",
+  "ipa": "phiên âm ipa",
+  "type": "loại từ (noun/verb/adjective/adverb/phrase)",
+  "meaning": "Nghĩa tiếng Việt chuẩn",
+  "definition": "Định nghĩa tiếng Anh ngắn",
+  "example": "Ví dụ tiếng Anh",
+  "exampleVi": "Dịch ví dụ",
+  "mnemonics": "Mẹo nhớ từ tiếng Việt",
+  "collocations": "Từ đồng nghĩa hoặc cụm từ liên quan"
+}`;
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: `Phân tích từ vựng: "${query}"` }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: { responseMimeType: "application/json" }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    const parsed = JSON.parse(jsonText);
+                    currentSearchedAIWord = parsed;
+
+                    document.getElementById('ai-res-word').innerText = parsed.word;
+                    document.getElementById('ai-res-ipa').innerText = parsed.ipa || '';
+                    document.getElementById('ai-res-type').innerText = parsed.type || 'word';
+                    document.getElementById('ai-res-meaning').innerText = parsed.meaning;
+                    document.getElementById('ai-res-def').innerText = parsed.definition || '';
+                    document.getElementById('ai-res-example').innerText = `"${parsed.example || ''}"`;
+                    document.getElementById('ai-res-example-vi').innerText = `"${parsed.exampleVi || ''}"`;
+                    document.getElementById('ai-res-mnemonics').innerText = parsed.mnemonics || 'Không có';
+                    document.getElementById('ai-res-collocations').innerText = parsed.collocations || 'Không có';
+
+                    loadingElem.classList.add('hidden');
+                    resultCard.classList.remove('hidden');
+                } else {
+                    throw new Error('Response error');
+                }
+            } catch (err) {
+                loadingElem.classList.add('hidden');
+                if (!savedKey) {
+                    openApiKeyModal();
+                    showToast('Vui lòng cài Gemini API Key để tra từ!', 'fa-key');
+                } else {
+                    showToast('Không thể kết nối AI. Kiểm tra lại Key hoặc kết nối mạng!', 'fa-triangle-exclamation');
+                }
+            }
+        }
+
+        function addAIWordToFlashcards() {
+            if (!currentSearchedAIWord) return;
+
+            const existing = vocabularyList.find(i => i.word.toLowerCase() === currentSearchedAIWord.word.toLowerCase());
+            if (existing) {
+                showToast(`Từ "${currentSearchedAIWord.word}" đã có sẵn trong kho!`, 'fa-circle-info');
+                return;
+            }
+
+            const newVocab = {
+                id: Date.now().toString(),
+                word: currentSearchedAIWord.word,
+                ipa: currentSearchedAIWord.ipa || '',
+                type: currentSearchedAIWord.type || 'noun',
+                topic: 'Từ AI',
+                meaning: currentSearchedAIWord.meaning,
+                definition: currentSearchedAIWord.definition || '',
+                example: currentSearchedAIWord.example || '',
+                exampleVi: currentSearchedAIWord.exampleVi || '',
+                mastered: false
+            };
+
+            vocabularyList.unshift(newVocab);
+            saveVocabularyToStorage();
+            populateCategoryFilter();
+            filterCategory();
+            renderVocabTable();
+
+            showToast(`Đã lưu "${newVocab.word}" vào Flashcards!`, 'fa-circle-check');
+        }
+
+        // Minigames
+        function startGame(gameType) {
+            if (vocabularyList.length < 4) {
+                showToast('Thêm ít nhất 4 từ vựng để chơi minigame!', 'fa-triangle-exclamation');
+                return;
+            }
+
+            document.getElementById('game-menu').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+
+            document.getElementById('game1-ui').classList.add('hidden');
+            document.getElementById('game2-ui').classList.add('hidden');
+            document.getElementById('game3-ui').classList.add('hidden');
+
+            gameScore = 0;
+            document.getElementById('game-score').innerHTML = `Điểm: <span class="text-pink-600">${gameScore}</span>`;
+
+            if (gameType === 1) {
+                document.getElementById('game-title-badge').innerText = "Nối Từ";
+                document.getElementById('game1-ui').classList.remove('hidden');
+                initMatchingGame();
+            } else if (gameType === 2) {
+                document.getElementById('game-title-badge').innerText = "Trắc Nghiệm";
+                document.getElementById('game2-ui').classList.remove('hidden');
+                initQuizGame();
+            } else if (gameType === 3) {
+                document.getElementById('game-title-badge').innerText = "Xếp Chữ";
+                document.getElementById('game3-ui').classList.remove('hidden');
+                initScrambleGame();
+            }
+
+            startTimer(30);
+        }
+
+        function startTimer(seconds) {
+            clearInterval(currentGameTimer);
+            gameTimeLeft = seconds;
+            document.getElementById('game-timer').innerText = gameTimeLeft;
+
+            currentGameTimer = setInterval(() => {
+                gameTimeLeft--;
+                document.getElementById('game-timer').innerText = gameTimeLeft;
+                if (gameTimeLeft <= 0) {
+                    clearInterval(currentGameTimer);
+                    finishGame();
+                }
+            }, 1000);
+        }
+
+        function exitGame() {
+            clearInterval(currentGameTimer);
+            document.getElementById('game-container').classList.add('hidden');
+            document.getElementById('game-menu').classList.remove('hidden');
+        }
+
+        function finishGame() {
+            clearInterval(currentGameTimer);
+            confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+            showToast(`Hoàn thành! Điểm số: ${gameScore}`, 'fa-trophy');
+            setTimeout(() => exitGame(), 2000);
+        }
+
+        // Matching Game
+        let selectedMatchCard = null;
+        function initMatchingGame() {
+            const grid = document.getElementById('matching-grid');
+            grid.innerHTML = '';
+            
+            const shuffled = [...vocabularyList].sort(() => 0.5 - Math.random()).slice(0, 4);
+            const englishCards = shuffled.map(item => ({ id: item.id, text: item.word, type: 'en' }));
+            const vietnameseCards = shuffled.map(item => ({ id: item.id, text: item.meaning, type: 'vi' }));
+            
+            const allCards = [...englishCards, ...vietnameseCards].sort(() => 0.5 - Math.random());
+
+            allCards.forEach(card => {
+                const btn = document.createElement('button');
+                btn.className = "match-btn bg-pink-50 hover:bg-pink-100 border-2 border-pink-200 text-pink-700 font-extrabold p-2.5 rounded-2xl text-xs transition shadow-sm h-16 flex items-center justify-center text-center";
+                btn.innerText = card.text;
+                btn.dataset.id = card.id;
+                btn.dataset.type = card.type;
+                btn.onclick = () => handleMatchClick(btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function handleMatchClick(btn) {
+            if (btn.classList.contains('matched')) return;
+
+            if (!selectedMatchCard) {
+                selectedMatchCard = btn;
+                btn.classList.add('border-pink-500', 'bg-pink-200');
+            } else {
+                if (selectedMatchCard === btn) {
+                    btn.classList.remove('border-pink-500', 'bg-pink-200');
+                    selectedMatchCard = null;
+                    return;
+                }
+
+                if (selectedMatchCard.dataset.type !== btn.dataset.type && selectedMatchCard.dataset.id === btn.dataset.id) {
+                    selectedMatchCard.classList.remove('bg-pink-200', 'border-pink-500');
+                    btn.classList.remove('bg-pink-200', 'border-pink-500');
+
+                    selectedMatchCard.classList.add('bg-green-100', 'border-green-400', 'text-green-700', 'opacity-50', 'matched');
+                    btn.classList.add('bg-green-100', 'border-green-400', 'text-green-700', 'opacity-50', 'matched');
+
+                    selectedMatchCard = null;
+                    gameScore += 20;
+                    document.getElementById('game-score').innerHTML = `Điểm: <span class="text-pink-600">${gameScore}</span>`;
+
+                    const remaining = document.querySelectorAll('.match-btn:not(.matched)');
+                    if (remaining.length === 0) {
+                        setTimeout(() => initMatchingGame(), 400);
+                    }
+                } else {
+                    btn.classList.add('bg-rose-200', 'border-rose-500');
+                    selectedMatchCard.classList.add('bg-rose-200', 'border-rose-500');
+
+                    setTimeout(() => {
+                        btn.classList.remove('bg-rose-200', 'border-rose-500', 'bg-pink-200', 'border-pink-500');
+                        selectedMatchCard.classList.remove('bg-rose-200', 'border-rose-500', 'bg-pink-200', 'border-pink-500');
+                        selectedMatchCard = null;
+                    }, 400);
+                }
+            }
+        }
+
+        // Quiz Game
+        let currentQuizCorrectItem = null;
+        function initQuizGame() {
+            const container = document.getElementById('quiz-options');
+            container.innerHTML = '';
+
+            const correctItem = vocabularyList[Math.floor(Math.random() * vocabularyList.length)];
+            currentQuizCorrectItem = correctItem;
+
+            document.getElementById('quiz-question-word').innerText = correctItem.word;
+
+            const wrongOptions = vocabularyList
+                .filter(i => i.id !== correctItem.id)
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3)
+                .map(i => i.meaning);
+
+            const allOptions = [correctItem.meaning, ...wrongOptions].sort(() => 0.5 - Math.random());
+
+            allOptions.forEach(optText => {
+                const btn = document.createElement('button');
+                btn.className = "bg-purple-50 hover:bg-purple-100 border-2 border-purple-200 text-purple-800 font-bold p-3 rounded-2xl text-xs transition shadow-sm text-center";
+                btn.innerText = optText;
+                btn.onclick = () => handleQuizAnswer(optText, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleQuizAnswer(selectedOption, btnElem) {
+            if (selectedOption === currentQuizCorrectItem.meaning) {
+                btnElem.className = "bg-green-500 text-white font-extrabold p-3 rounded-2xl text-xs shadow-md";
+                gameScore += 15;
+                document.getElementById('game-score').innerHTML = `Điểm: <span class="text-pink-600">${gameScore}</span>`;
+                setTimeout(() => initQuizGame(), 500);
+            } else {
+                btnElem.className = "bg-rose-500 text-white font-extrabold p-3 rounded-2xl text-xs shadow-md";
+                setTimeout(() => initQuizGame(), 500);
+            }
+        }
+
+        // Scramble Game
+        let currentScrambleItem = null;
+        function initScrambleGame() {
+            currentScrambleItem = vocabularyList[Math.floor(Math.random() * vocabularyList.length)];
+            document.getElementById('scramble-hint').innerText = `Gợi ý: ${currentScrambleItem.meaning}`;
+            document.getElementById('scramble-input').value = '';
+
+            const word = currentScrambleItem.word.toUpperCase();
+            const scrambled = word.split('').sort(() => 0.5 - Math.random()).join('');
+
+            const lettersContainer = document.getElementById('scramble-letters');
+            lettersContainer.innerHTML = '';
+
+            scrambled.split('').forEach(char => {
+                const tag = document.createElement('span');
+                tag.className = "w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 text-amber-800 font-black text-sm flex items-center justify-center shadow-xs";
+                tag.innerText = char;
+                lettersContainer.appendChild(tag);
+            });
+        }
+
+        function checkScrambleAnswer() {
+            const val = document.getElementById('scramble-input').value.trim().toUpperCase();
+            if (val === currentScrambleItem.word.toUpperCase()) {
+                gameScore += 25;
+                document.getElementById('game-score').innerHTML = `Điểm: <span class="text-pink-600">${gameScore}</span>`;
+                showToast('Chính xác!', 'fa-circle-check');
+                initScrambleGame();
+            } else {
+                showToast('Thử lại nhé!', 'fa-circle-xmark');
+            }
+        }
+
+        // Render Vocabulary Table
+        function renderVocabTable() {
+            const tbody = document.getElementById('vocab-table-body');
+            tbody.innerHTML = '';
+
+            if (vocabularyList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">Chưa có từ vựng</td></tr>`;
+                return;
+            }
+
+            vocabularyList.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-pink-50/50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-black text-pink-600 flex items-center gap-1.5">
+                        ${item.word}
+                        <button onclick="speakText('${item.word}')" class="text-pink-400 hover:text-pink-600 text-xs">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </button>
+                    </td>
+                    <td class="p-3"><span class="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full font-bold">${item.type || 'noun'}</span></td>
+                    <td class="p-3 font-bold text-gray-800">${item.meaning}</td>
+                    <td class="p-3"><span class="bg-pink-100 text-pink-600 text-[10px] px-2 py-0.5 rounded-full font-bold">${item.topic || 'Chung'}</span></td>
+                    <td class="p-3 text-center">
+                        <span class="${item.mastered ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            ${item.mastered ? 'Đã thuộc' : 'Chưa thuộc'}
+                        </span>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick="deleteVocab('${item.id}')" class="text-gray-300 hover:text-rose-500 transition px-1 py-0.5">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteVocab(id) {
+            vocabularyList = vocabularyList.filter(i => i.id !== id);
+            saveVocabularyToStorage();
+            populateCategoryFilter();
+            filterCategory();
+            renderVocabTable();
+            showToast('Đã xóa từ vựng!', 'fa-circle-check');
+        }
+
+        // Toast Helper
+        function showToast(message, iconClass = 'fa-circle-check') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMessage.innerText = message;
+            toastIcon.className = `fa-solid ${iconClass} text-pink-400`;
+
+            toast.classList.remove('-translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
